@@ -1,6 +1,6 @@
 <template>
   <div class="home overflow-hidden">
-    <div class="lux-header-container flex fixed w-full px-10 z-10">
+    <div class="lux-header-container flex fixed w-full px-10 z-20">
       <div class="flex flex-1 pt-6">
         <div class="logo-container">
           <img src="../assets/img/luxcaddyLogo.png">
@@ -94,45 +94,70 @@
           <li>Partner Shops</li>
         </ul>
       </div>
-      <div class="w-3/5 list-body-container relative">
-        <div class="list-header-img">
-          <img src="../assets/img/asian-corner.jpg" class="w-full" />
-        </div>
-        <div class="flex flex-wrap product-container">
-          <div v-for="list in listData" :key="list.id" class="p-2 relative product-details">
-            <router-link :to="{name: 'Product',params: {id:list.id}} " :list="list">
-              <div class="cursor-pointer hover px-2">
-                <div class="shopping-unit-price mt-8">
-                  <div class="text-xs text-gray-600">Unit price:</div>
-                  <div class="text-sm">{{ list.price }} €/ut</div>
-                </div>
-                <div class="shopping-my-shop text-sm mb-1">
-                  <input type="checkbox" /> MyShop
-                </div>
-                <div class="shopping-list-btn-container">
-                  <button class="text-white font-bold w-full text-xs py-1 px-2 flex items-center">
-                    <img src="../assets/img/butt_alist.png" class="mr-2">
-                    SHOPPING LISTS
-                  </button>
-                </div>
-              </div>
-              <div class="text-left font-bold text-sm leading-none h-14">{{ list.title }}</div>
-              <div class="flex items-center img-container">
-                <img class="m-auto" :src="list.image">
-              </div>
-            </router-link>
+      <div class="w-3/5 list-body-container px-4 relative">
+       <div class="flex">
+         <div class="flex-1 ">
+           <div class="text-3xl font-bold mb-4 w-11/12">{{ productData.title }}</div>
+         </div>
+         <div>
+           <router-link to="/">
+            <button class="close-btn rounded py-2 px-6">❌</button>
+           </router-link>
+         </div>
+       </div>
+        <div class="flex w-full mt-10">
+          <div class="w-2/5">
+            <div>
+              <div class="border-gray-200	border-b text-xs pb-1 mb-1">UNIT PRICE</div>
+              <div>{{ productData.price }} €/ut</div>
+            </div>
             <div class="">
-              <div class="text-right font-bold text-2xl">{{ list.price }} €</div>
-              <div>
-                <button class="text-left add-cart-btn text-white font-bold w-full text-xs py-1 px-2 flex">
-                  <img src="../assets/img/butt_Add.png" class="but-add-img mr-2">
-                  ADD TO CART
-                </button>
+              <div class="text-right text-lightGreen font-bold text-3xl">{{ productData.price }} €</div>
+              <div class="flex">
+                <div class="flex adder-container mr-2">
+                  <div class="">
+                    <input type="number" class="text-right pr-1 text-xl font-bold" value="0" />
+                  </div>
+                  <div>
+                    <div class="add-minus cursor-pointer font-bold plus flex items-center">
+                      <span>+</span>
+                    </div>
+                    <div class="add-minus cursor-pointer minus flex items-baseline">
+                      <span>-</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="w-full">
+                  <button class="add-cart-btn text-white h-full font-bold text-sm w-full">ADD TO CART</button>
+                </div>
+              </div>
+              <div class="border-gray-200	border-t mt-3">
+                <button class="py-0 px-2 flex items-center shopping-list-btn rounded-b"><span class="mr-2">≡</span> <span class="text-xs">Shopping Lists</span></button>
               </div>
             </div>
           </div>
+          <div class="w-3/5 selected-product-img ml-10">
+            <img :src="productData.image" class="w-56 m-auto" />
+          </div>
         </div>
-        <Footer class="m-2" />
+        <div class="mt-20">
+          <div class="mb-10">
+            <div class="border-gray-200	border-b text-xs pb-1 mb-2">DESCRIPTION:</div>
+            <div class="text-sm leading-normal">{{ productData.description }}</div>
+          </div>
+          <div class="mb-10">
+            <div class="border-gray-200	border-b text-xs pb-1 mb-2">CATEGORIES:</div>
+            <div class="capitalize text-lightGreen font-semibold">
+              <span class="text-black mr-2">❯</span> {{ productData.category }}
+            </div>
+          </div>
+          <div>
+            <div class="border-gray-200	border-b text-xs pb-1 mb-2">ALLERGENS*</div>
+            <div>No allergens</div>
+          </div>
+          <p class="mt-10 text-xs">*ALWAYS check the informations on the products before consommation. Data and images on this page are not contractual.</p>
+        </div>
+        <Footer />
         <Loading  v-if="showLoading" />
       </div>
       <div class="w-1/5">
@@ -183,8 +208,8 @@
 import Footer from "../components/Footer.vue";
 import Loading from "../components/Loading.vue";
 import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import axios from "axios";
-import _ from 'lodash';
 
 export default {
   name: 'Home',
@@ -193,38 +218,32 @@ export default {
     Loading
   },
   setup() {
-    const productsData = ref([]);
-    const listData = ref([]);
+    const route = useRoute();
+    const productData = ref({});
     const showLoading = ref(false);
 
     onMounted(() => {
-      getProducts();
+      getSpecificProductData();
     });
 
-    async function getProducts() {
+    async function getSpecificProductData() {
+      let id = route.params.id;
       showLoading.value = true;
+
       await axios.get(
-        "https://fakestoreapi.com/products"
+        "https://fakestoreapi.com/products/" + id
       )
       .then((res) => {
-        productsData.value = res.data;
-        listData.value = _.sortBy(productsData.value,['title','price'])
+        productData.value = res.data;
         showLoading.value = false;
       })
-    }
-
-    async function filterItem( a,b ) { 
-      listData.value = _.filter(productsData.value, function(o) {
-        return o.price > a && o.price < b ;
-      })
+      
     }
 
     return {
-      productsData,
-      getProducts,
-      listData,
-      showLoading,
-      filterItem,
+      getSpecificProductData,
+      productData,
+      showLoading
     }
   }
 }
